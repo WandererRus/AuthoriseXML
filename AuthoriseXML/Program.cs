@@ -9,13 +9,32 @@ namespace AuthoriseXML
         static bool AuthoriseFailed = true; 
         static void Main(string[] args)
         {
-            while (AuthoriseFailed)
+            if (ConsoleCommand.UserStart() == "auth")
             {
-                ConsoleCommand.MustAuth();
-                AuthoriseFailed = Authorize.GetUserAuthorize(ConsoleCommand.Auth());
-                if (AuthoriseFailed) ConsoleCommand.FailedAuth();
+                while (AuthoriseFailed)
+                {
+                    ConsoleCommand.MustAuth();
+                    AuthoriseFailed = Authorize.GetUserAuthorize(ConsoleCommand.Auth());
+                    if (AuthoriseFailed) ConsoleCommand.FailedAuth();
+                }
+                if (!AuthoriseFailed) ConsoleCommand.SucessAuth();
             }
-            if (!AuthoriseFailed) ConsoleCommand.SucessAuth();
+            else
+            {
+                string login;
+                do
+                {
+                    Console.WriteLine("Введите желаемый логин");
+                    login = Console.ReadLine();
+                }
+                while (Authorize.ExistUser(login));
+                Console.WriteLine("Введите желаемый пароль");
+                string password = Console.ReadLine();
+                Console.WriteLine("Введите дату рождения в формате 2000.12.28");
+                string[] date = Console.ReadLine().Split('.');
+                DateTime dateOfBirth = new DateTime(Int32.Parse(date[0]), Int32.Parse(date[1]), Int32.Parse(date[2]));
+                Authorize.SaveUserData(login,password,dateOfBirth);
+            }
         }
     }
 
@@ -44,20 +63,86 @@ namespace AuthoriseXML
     {
         public static bool GetUserAuthorize( User user) 
         {
-            XmlDocument xdoc = new XmlDocument();
-            xdoc.Load("users.xml");
             bool tmp = true;
-            foreach (XmlElement element in xdoc.GetElementsByTagName("user"))
+            FileInfo file = new FileInfo("users.xml");
+            if (file.Exists)
             {
-                if(element.GetElementsByTagName("login")[0].InnerText == user.Login &&
-                    element.GetElementsByTagName("password")[0].InnerText == user.Password)
-                    tmp = false;
+                XmlDocument xdoc = new XmlDocument();
+                xdoc.Load("users.xml");                
+                foreach (XmlElement element in xdoc.GetElementsByTagName("user"))
+                {
+                    if (element.GetElementsByTagName("login")[0].InnerText == user.Login &&
+                        element.GetElementsByTagName("password")[0].InnerText == user.Password)
+                        tmp = false;
+                }
+                return tmp;
             }
-            return tmp;
+            else
+            {
+                return tmp;
+            }
+            
         }
-        static void SetUserData(string log, string pas, DateTime date)
+        public static bool ExistUser(string login)
         {
+            FileInfo file = new FileInfo("users.xml");
+            if (file.Exists)
+            {
+                XmlDocument xdoc = new XmlDocument();
+                xdoc.Load("users.xml");
+                bool findUser = false;
+                foreach (XmlElement element in xdoc.GetElementsByTagName("user"))
+                {
+                    if (element.GetElementsByTagName("login")[0].InnerText == login)
+                        findUser = true;
+                }
+                return findUser;
+            }
+            else 
+            {
+                return false;
+            }
+            
+        }
+        public static void SaveUserData(string log, string pas, DateTime date)
+        {
+            List<User> users = new List<User>();
+            XElement root;
+            XmlDocument xdoc;
+            FileInfo file = new FileInfo("users.xml");
+            if (!file.Exists)
+            {
+                FileStream fs = file.Create();
+                fs.Close();
+                users.Add(new User(log, pas, date));                
+            }
+            else
+            {
+                xdoc = new XmlDocument();
+                xdoc.Load("users.xml");
+                foreach (XmlElement element in xdoc.GetElementsByTagName("user"))
+                {
+                    users.Add(new User(
+                        element.GetElementsByTagName("login")[0].InnerText,
+                        element.GetElementsByTagName("password")[0].InnerText,
+                        Convert.ToDateTime(element.GetElementsByTagName("dateofbirth")[0].InnerText)));
+                    users.Add(new User(log, pas, date));
+                }
+                xdoc.RemoveAll();
+            }            
+            root = new XElement("users");
+            foreach (User user in users)
+            {
+                XElement element = new XElement("user");
+                element.Add(
+                    new XElement("login", user.Login),
+                    new XElement("password", user.Password),
+                    new XElement("dateofbirth", user.DateOfBirth));
+               root.Add(element);
+            }
 
+            root.Save("users.xml");
+            
         }
 
     }
@@ -84,6 +169,18 @@ namespace AuthoriseXML
         public static void FailedAuth()
         {
             Console.WriteLine("Вы не смогли авторизоваться.");
+        }
+        public static string UserStart() 
+        {
+            Console.WriteLine("Для авторизации наберите auth, для регистрации наберите register");
+            string answer = "";
+            switch (Console.ReadLine())
+            {
+                case "auth": answer = "auth"; break;
+                case "register": answer = "register"; break;
+                default: Console.WriteLine("Введенная вами команда не распознана."); UserStart(); break;
+            }
+            return answer;
         }
     }    
 }
