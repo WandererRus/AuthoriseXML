@@ -1,5 +1,4 @@
-﻿using AuthoriseXML;
-using System.Xml;
+﻿using System.Xml;
 using System.Xml.Linq;
 
 namespace AuthoriseXML
@@ -42,7 +41,7 @@ namespace AuthoriseXML
     {
         string _name;
         string _password;
-        DateTime _birthDate = DateTime.Now;
+        DateTime _birthDate;
         public string Login { get => _name; set  =>  _name = value; }
         public string Password { get => _password; set => _password = value; }
         public DateTime DateOfBirth { get => _birthDate; set => _birthDate = value; }
@@ -51,11 +50,6 @@ namespace AuthoriseXML
             Login = name;
             Password = password;
             DateOfBirth = dateOfBirth;
-        }
-        public User(string name, string password)
-        {
-            Login = name;
-            Password = password;
         }
     }
 
@@ -74,8 +68,16 @@ namespace AuthoriseXML
                     if (element.GetElementsByTagName("login")[0].InnerText == user.Login &&
                         element.GetElementsByTagName("password")[0].InnerText == user.Password)
                         tmp = false;
+                   
+                }
+                if (ConsoleCommand.AuthTryCount == 3)
+                {
+                    tmp = false;
+                    ConsoleCommand.AuthTryCount = 0;
+                    ConsoleCommand.UserStart();
                 }
                 return tmp;
+
             }
             else
             {
@@ -140,15 +142,14 @@ namespace AuthoriseXML
                     new XElement("dateofbirth", user.DateOfBirth));
                root.Add(element);
             }
-
-            root.Save("users.xml");
-            
+            root.Save("users.xml");            
         }
 
     }
 
     class ConsoleCommand 
     {
+        public static int AuthTryCount = 0;
         public static void MustAuth() 
         {
             Console.WriteLine("Авторизуйтесь! Заполните поля логина и пароля.");
@@ -159,7 +160,7 @@ namespace AuthoriseXML
             string login = Console.ReadLine();
             Console.WriteLine("Введите логин:");
             string password = Console.ReadLine();
-            User user = new User(login, password);
+            User user = new User(login, password,DateTime.Now);
             return user;
         }
         public static void SucessAuth()
@@ -169,6 +170,7 @@ namespace AuthoriseXML
         public static void FailedAuth()
         {
             Console.WriteLine("Вы не смогли авторизоваться.");
+            AuthTryCount++;
         }
         public static string UserStart() 
         {
