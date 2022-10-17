@@ -44,6 +44,60 @@ namespace AuthoriseXML
         {
             Name = name;
         }
-        
+
+
+        public double StartQuiz()
+        {
+            int index = 0;
+            foreach (string quest in questions)
+            {
+
+                Console.WriteLine(quest);
+                int count = 1;
+                foreach (string variant in variantsQuestions[index])
+                {
+                    Console.WriteLine(count + "." + variant);
+                    count++;
+                }
+                bool scoreAdding = false;
+                Console.WriteLine("Введите правильный ответ цифрой варианта. Если ответов несколько, то через запятую.");
+                string answer = Console.ReadLine();
+                if (answer.Contains(','))
+                {
+                    string[] answers = answer.Split(",");
+                    
+                    foreach (string ans in answers)
+                    {
+                        if (rightAnswers[index][Int32.Parse(ans) - 1] == true)
+                        {
+                            scoreAdding = true;
+                        }
+                        else
+                        {
+                            scoreAdding = false;
+                            break;
+                        }
+                    }
+                    if (scoreAdding)
+                    {
+                        Score += ScoreAnswers[index];
+                    }
+
+                }
+                else
+                {
+                    if (rightAnswers[index][Int32.Parse(answer) - 1] == true)
+                    {
+                        scoreAdding = true;
+                    }
+                    if (scoreAdding)
+                    {
+                        Score += ScoreAnswers[index];
+                    }
+                }
+                index++;
+            }
+            return Score;
+        }
     }
 }

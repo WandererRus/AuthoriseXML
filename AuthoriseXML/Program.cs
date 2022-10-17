@@ -8,6 +8,8 @@ namespace AuthoriseXML
         static bool AuthoriseFailed = true; 
         static void Main(string[] args)
         {
+            List<Quiz> quizzes = new List<Quiz>();
+            quizzes.Add(new Quiz("Информатика"));
             if (ConsoleCommand.UserStart() == "auth")
             {
                 while (AuthoriseFailed)
@@ -23,8 +25,15 @@ namespace AuthoriseXML
                     string[] command = Console.ReadLine().Split(" ");
                     switch (command[0])
                     {
-                        case "quizlist":; break;
-                        case "startquiz":; break;
+                        case "quizlist": foreach (Quiz q in quizzes) { Console.WriteLine($"{q.Name}"); }; break;
+                        case "startquiz": 
+                            foreach (Quiz q in quizzes) { 
+                                if (q.Name == command[1]) 
+                                {
+                                    Console.WriteLine($"Ваше счет: {q.StartQuiz()}");
+                                } 
+                            }; 
+                            break;
                         case "quizresults":; break;
                         case "topquiz":; break;
                         case "changesettings":; break;
